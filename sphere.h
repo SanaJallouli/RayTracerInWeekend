@@ -2,20 +2,21 @@
 #include "hittable.h"
 
 
-class sphere : hittable
+
+class sphere : public hittable
 {
 public : 
 	point3 center_sphere; 
 	float radius;
 
 
-	sphere() {};
+	sphere():radius(0), center_sphere(vec3(0,0,0)) {};
 
 	sphere(point3 center, float radius) : center_sphere(center), radius(radius) {
 	};
 
 
-	bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const 
+	bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override
 	{
 		// hit means that there is a t along the ray r such that (P(t)-C).(P(t)-C)= r^2
 		
@@ -50,7 +51,11 @@ public :
 			// find the unified normal : the normal is in the direction of the vector (hit)-(center_sphere)
 			rec.t = t;
 			rec.p = r.at(rec.t);
-			rec.normal = unit_vector(rec.p - center_sphere);
+			vec3 outward = unit_vector(rec.p - center_sphere);
+			rec.set_face_normal(r, outward);
+			if (!rec.front_face) 
+				std::clog << "from inside ";
+
 			return true;
 		}
 

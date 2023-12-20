@@ -3,7 +3,8 @@
 #include "ray.h"
 #include "vec3.h"
 #include "sphere.h"
-
+#include "hittable.h"
+#include "hittable_list.h"
 using color = vec3;
 
 color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
@@ -49,10 +50,22 @@ color hits_sphere_hit_point(const ray& r) {
         vec3 normal = unit_vector(p - center_sphere);
         // map normals from [-1..1] to [0..1] 
         return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
-
     };
 
 }
+
+color hits_hittable_list(hittable_list hittables, const ray&r, double min , double max) {
+    hit_record hit_info;
+   if (hittables.hit(r, min, max , hit_info)) // this will loop over the hittable, and return the info on the hit with the nearest object to the camera if any. 
+   { // there was a hit, hit info contains the info on the hit with the nraset object 
+     // take the info on the normal (already unit 1) to use it as color.
+    // transpose normal from [-1..1] to [0..1]
+       return 0.5 * color(hit_info.normal.x() + 1, hit_info.normal.y() + 1, hit_info.normal.z() + 1);
+   }
+   else  return ray_color(r);
+
+}
+
 
 color hits_sphere_use_hittable(const ray& r, sphere s, double min, double max) {
     hit_record hit_info;
@@ -115,14 +128,36 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
 
-            
+            //1
            // color pixel_color = ray_color_sphere(r); // just output red if hits = red circle
-            //  color pixel_color = hits_sphere_hit_point(r); // output the surface normals where it hits = shades
             
+
+            //2
+           //  color pixel_color = hits_sphere_hit_point(r); // output the surface normals where it hits = shades
+            
+
+            //3
+            /*
             sphere s(vec3(0, 0, -1), 0.5);
             double min = 0.001;
             double max =  0.7;
             color pixel_color = hits_sphere_use_hittable(r, s, min, max);
+            */
+
+            // 4
+            // use list of hittable objects 
+            hittable_list myhittables;
+            auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
+            auto eye = std::make_shared<sphere>(vec3(-0.15, 0.15, -0.7), 0.1);
+            auto eye2 = std::make_shared<sphere>(vec3(0.15, 0.15, -0.7), 0.1);
+            auto sphere2 = std::make_shared<sphere>(vec3(0, -(viewport_height/2), -1), 0.7);
+            myhittables.add(sphere1);
+            myhittables.add(sphere2);
+            myhittables.add(eye);
+            myhittables.add(eye2);
+            double min = 0.001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
+            double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
+            color pixel_color = hits_hittable_list(myhittables,r, min, max);
             write_color(std::cout, pixel_color);
 
 
