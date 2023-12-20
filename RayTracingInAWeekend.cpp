@@ -2,9 +2,11 @@
 
 #include "ray.h"
 #include "vec3.h"
+#include "sphere.h"
+
 using color = vec3;
 
-color ray_color(const ray& r) {
+color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
     vec3 unit = unit_vector(r.dir);
     float y_coord = 0.5 * (unit.y() + 1.0);
     auto initial_color = vec3(1, 1, 1);
@@ -50,6 +52,13 @@ color hits_sphere_hit_point(const ray& r) {
 
     };
 
+}
+
+color hits_sphere_use_hittable(const ray& r, sphere s, double min, double max) {
+    hit_record hit_info;
+    if (s.hit(r, min, max, hit_info))
+        return 0.5 * color(hit_info.normal.x() + 1, hit_info.normal.y() + 1, hit_info.normal.z() + 1);
+    else return ray_color(r);
 }
 
 void write_color(std::ostream& out, color pixel_color) {
@@ -106,7 +115,14 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
 
-            color pixel_color = hits_sphere_hit_point(r);
+            
+           // color pixel_color = ray_color_sphere(r); // just output red if hits = red circle
+            //  color pixel_color = hits_sphere_hit_point(r); // output the surface normals where it hits = shades
+            
+            sphere s(vec3(0, 0, -1), 0.5);
+            double min = 0.001;
+            double max =  0.7;
+            color pixel_color = hits_sphere_use_hittable(r, s, min, max);
             write_color(std::cout, pixel_color);
 
 
