@@ -12,9 +12,11 @@ color ray_color(const ray& r) {
     auto blend = (1 - y_coord) * initial_color + last_color * y_coord;
     return blend;
 }
+
 bool hits_sphere(const ray& r) {
     // hits sphere means that there is at least one solution for the eqution : (P(r.at(t))-C).(P(t)-C)= r^2 
-    auto center_sphere = vec3(0, 0, -1);
+    // place a sphere in -1 on the z axis , of radius 1
+    auto center_sphere = vec3(0, 0, -1); // even if we put it behind the camera, we end up with the same result, our code does not distinguish yet in front of camera or not
     auto a = dot (r.dir , r.dir) ;
     auto b = dot ((2 * r.dir ), (r.orig - center_sphere));
     auto c = dot((r.orig - center_sphere), (r.orig - center_sphere))- 0.1*0.1;// 
@@ -27,6 +29,27 @@ color ray_color_sphere(const ray& r) {
 // place a sphere in -1 on the z axis , of radius 1
     if (hits_sphere(r)) return vec3(1, 0, 0); // if there is a point t along that r that hits the sphere 
     else return ray_color(r);
+}
+
+color hits_sphere_hit_point(const ray& r) {
+    // hits sphere means that there is at least one solution for the eqution : (P(r.at(t))-C).(P(t)-C)= r^2 
+    // place a sphere in -1 on the z axis , of radius 1
+    auto center_sphere = vec3(0, 0, -1); // even if we put it behind the camera, we end up with the same result, our code does not distinguish yet in front of camera or not
+    auto a = dot(r.dir, r.dir);
+    auto b = dot((2 * r.dir), (r.orig - center_sphere));
+    auto c = dot((r.orig - center_sphere), (r.orig - center_sphere)) - 0.1 * 0.1;// 
+    auto delta = (b * b - 4 * a * c);
+   
+    if (delta < (double)0) { return ray_color(r); }
+    else {
+        double t = (-b - sqrt(delta)) / (2 * a); 
+        point3 p = r.at(t);// point at t along the ray, where t hits the sphere
+        vec3 normal = unit_vector(p - center_sphere);
+        // map normals from [-1..1] to [0..1] 
+        return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1); //??
+      
+    };
+
 }
 
 void write_color(std::ostream& out, color pixel_color) {
@@ -83,7 +106,7 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
 
-            color pixel_color = ray_color_sphere(r);
+            color pixel_color = hits_sphere_hit_point(r);
             write_color(std::cout, pixel_color);
 
 
