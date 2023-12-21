@@ -6,9 +6,10 @@
 #include "hittable.h"
 #include "hittable_list.h"
 #include "interval.h"
-
+#include "camera.h"
 using color = vec3;
 
+/*
 color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
     vec3 unit = unit_vector(r.dir);
     float y_coord = 0.5 * (unit.y() + 1.0);
@@ -91,8 +92,12 @@ void write_color(std::ostream& out, color pixel_color) {
         << static_cast<int>(255.999 * pixel_color.y()) << ' '
         << static_cast<int>(255.999 * pixel_color.z()) << '\n';
 }
+
+*/
 int main() {
 
+
+    /*
     // set up image dimensions 
     auto aspect_ratio = 16.0 / 9.0; // ideal value , the real aspect_ratio can change b/c of rounding or if height is set to 1 
     int image_width = 400;
@@ -119,7 +124,7 @@ int main() {
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
     auto pixel_delta_u = viewport_u / image_width;// width of pixel in viewport or their spacing ?
     auto pixel_delta_v = viewport_v / image_height;// height of pixel in viewport 
-
+    
     auto viewport_upper_left = camera_center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
 
     //pixel 0,0 is not in the edge of the view port but 0.5*delta_u right and 0.5*delta_v down  
@@ -171,7 +176,7 @@ int main() {
            
             //color pixel_color = hits_hittable_list(myhittables,r, min, max);
             */
-
+    /*
 
             // 5- use interval class 
             hittable_list myhittables;
@@ -189,9 +194,31 @@ int main() {
             color pixel_color = hits_hittable_list_with_interval(myhittables, r, ray_position_to_consider);
             write_color(std::cout, pixel_color);
             //std::cout << ir << ' ' << ig << ' ' << ib << '\n';
-        }
-    }
+   }  }  
+*/
 
 
-    std::clog << "\rDone.                 \n";
+
+// 6- use camera class :
+camera cam;
+cam.initialize(); 
+
+hittable_list myhittables;
+auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
+
+// viewport height is initialized in initialize and do not depend on other factors 
+// but this shows that we may need to use some of the properties of the camera and the way it now defined does not really allow for that. since they will only be initialized when we call render 
+auto sphere2 = std::make_shared<sphere>(vec3(0, -(cam.viewport_height / 2), -1), 0.7);myhittables.add(sphere1);
+myhittables.add(sphere2);
+
+cam.aspect_ratio = 16.0 / 9.0;
+cam.image_width = 400;
+
+double min = 0.001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
+double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
+interval ray_position_to_consider(min, max);
+
+cam.render(myhittables, ray_position_to_consider);
+
+
 }
