@@ -5,6 +5,8 @@
 #include "sphere.h"
 #include "hittable.h"
 #include "hittable_list.h"
+#include "interval.h"
+
 using color = vec3;
 
 color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
@@ -53,6 +55,15 @@ color hits_sphere_hit_point(const ray& r) {
     };
 
 }
+
+color hits_hittable_list_with_interval(hittable_list hittables, const ray& r, interval interval_t_to_consider) {
+    hit_record hit_info;
+    if (hittables.hit_with_interval(r, interval_t_to_consider, hit_info)) {
+        return 0.5 * color(hit_info.normal.x() + 1, hit_info.normal.y() + 1, hit_info.normal.z() + 1);
+    }
+    else  return ray_color(r);
+}
+
 
 color hits_hittable_list(hittable_list hittables, const ray&r, double min , double max) {
     hit_record hit_info;
@@ -146,7 +157,7 @@ int main() {
 
             // 4
             // use list of hittable objects 
-            hittable_list myhittables;
+         /*   hittable_list myhittables;
             auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
             auto eye = std::make_shared<sphere>(vec3(-0.15, 0.15, -0.7), 0.1);
             auto eye2 = std::make_shared<sphere>(vec3(0.15, 0.15, -0.7), 0.1);
@@ -157,10 +168,26 @@ int main() {
             myhittables.add(eye2);
             double min = 0.001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
             double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
-            color pixel_color = hits_hittable_list(myhittables,r, min, max);
+           
+            //color pixel_color = hits_hittable_list(myhittables,r, min, max);
+            */
+
+
+            // 5- use interval class 
+            hittable_list myhittables;
+            auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
+            auto sphere2 = std::make_shared<sphere>(vec3(0, -(viewport_height / 2), -1), 0.7);
+            myhittables.add(sphere1);
+            myhittables.add(sphere2);
+        
+            double min = 0.001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
+            double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
+            interval ray_position_to_consider(min, max);
+           
+          
+
+            color pixel_color = hits_hittable_list_with_interval(myhittables, r, ray_position_to_consider);
             write_color(std::cout, pixel_color);
-
-
             //std::cout << ir << ' ' << ig << ' ' << ib << '\n';
         }
     }

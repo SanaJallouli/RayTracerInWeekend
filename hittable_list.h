@@ -18,6 +18,21 @@ public:
 		objects.push_back(object);
 	}
 
+	bool hit_with_interval(const ray& r, interval interval_considered, hit_record& rec) const override {
+		bool hitted = false;
+		rec.t = interval_considered.max;
+		for (auto obj : objects) {
+			hit_record temp_rec;
+			if (obj->hit_with_interval(r, interval_considered, temp_rec)) {
+				hitted = true; 
+				if (temp_rec.t < rec.t) {
+					rec = temp_rec;
+				}
+			}
+
+		}
+		return hitted;
+	}
 
 	// we have a ray, and we will see if for that ray, there is one hittable object along its way that is hit. 
 	// loop over all the hittable objects we have registered (in our list) and call their hit method. 
