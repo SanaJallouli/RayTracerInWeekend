@@ -33,7 +33,7 @@ public :
 	point3 postion_pixel_00;
 	
 
-
+	int num_sample = 10;
 	void initialize() {
 
 		// inintalize image 
@@ -66,9 +66,10 @@ public :
 	}
 	void write_color(std::ostream& out, color pixel_color) {
 		// Write the translated [0,255] value of each color component.
+		interval intensity(0.000, 0.999);
 		out << static_cast<int>(255.999 * pixel_color.x()) << ' '
 			<< static_cast<int>(255.999 * pixel_color.y()) << ' '
-			<< static_cast<int>(255.999 * pixel_color.z()) << '\n';
+			<< static_cast<int>(255.999 *pixel_color.z())<< '\n';
 	}
 	color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
 		vec3 unit = unit_vector(r.dir);
@@ -117,6 +118,52 @@ public :
 		}
 		std::clog << "\rDone.                 \n";
 	}
+
+	void render_withAntialiasing(hittable_list objects, interval ray_position_to_consider) {
+		initialize();
+
+
+		// p3 rendering :
+// number of columns             ----- number of rows 
+// number of pixels in the width ----- number of pixels in the
+		std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+
+		// loop over all the pixels in height of the image  
+		for (int j = 0; j < image_height; ++j)
+		{
+			std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+			// loop over all the pixels in the width of the image 
+			for (int i = 0; i < image_width; ++i) {
+
+				point3 pixel_center = postion_pixel_00 + i * viewport_delta_u + j * viewport_delta_v;//vec3(postion_pixel_00.x() + i, postion_pixel_00.y() - j, - focal_legth);
+				vec3 ray_direction = pixel_center - camera_center;
+				ray r(camera_center, ray_direction); // ray takes the camera center and the direction of the ray 
+				// the direction of the ray is the vector between the camera center and the pixel we are outputting its color
+
+				color pixel_color = hits_hittable_list_with_interval(objects, r, ray_position_to_consider);
+
+				auto sum_color = pixel_color;
+
+				// we want to project many rays to the square centered in this pixel with a width of maximum delta_u (so 0.5 delta_u from the center)and max width delta_v 
+				for (int k =0; k < num_sample; ++k) 
+				{
+					auto random_on_x = viewport_delta_u * (-0.5 + (random_double()));// random double gives us [0..1) we want to go from [-0.5 ..0.5)
+						auto random_on_y = viewport_delta_v * (-0.5 + random_double());
+						auto pixel_temp_position = pixel_center + random_on_x + random_on_y;
+						ray ray_temp(camera_center, pixel_temp_position - camera_center);
+						sum_color += hits_hittable_list_with_interval(objects, ray_temp, ray_position_to_consider);
+				}
+				
+
+				write_color(std::cout, sum_color/ (num_sample+1));
+
+
+			}
+		}
+		std::clog << "\rDone.                 \n";
+	}
+
 
 };
 

@@ -214,11 +214,11 @@ myhittables.add(sphere2);
 cam.aspect_ratio = 16.0 / 9.0;
 cam.image_width = 400;
 
-double min = 0.001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
+double min = 0.000000000001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
 double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
 interval ray_position_to_consider(min, max);
 
-cam.render(myhittables, ray_position_to_consider);
+cam.render_withAntialiasing(myhittables, ray_position_to_consider);
 
 
 }
