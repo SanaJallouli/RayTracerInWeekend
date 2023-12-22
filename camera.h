@@ -1,7 +1,6 @@
 #pragma once
 #include "vec3.h"
 #include "ray.h"
-
 #include "hittable_list.h"
 using color = vec3;
 
@@ -34,6 +33,7 @@ public :
 	
 
 	int num_sample = 10;
+	int    max_depth = 10;
 	void initialize() {
 
 		// inintalize image 
@@ -71,21 +71,42 @@ public :
 			<< static_cast<int>(255.999 * pixel_color.y()) << ' '
 			<< static_cast<int>(255.999 *pixel_color.z())<< '\n';
 	}
+	
+	
 	color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
 		vec3 unit = unit_vector(r.dir);
-		float y_coord = 0.5 * (unit.y() + 1.0);
+		float y_coord = 0.5 * (unit.y() + 1.0); // with focal legth 1 and in case the ray is not emmitted, and there is not hit, the z will be null 
 		auto initial_color = vec3(1, 1, 1);
 		auto last_color = vec3(0, 0, 1);
 		auto blend = (1 - y_coord) * initial_color + last_color * y_coord;
-		return blend;
+		return 0.5* color(unit.x() + 1, unit.y() + 1, unit.z());
 	}
 
 	color hits_hittable_list_with_interval(hittable_list hittables, const ray& r, interval interval_t_to_consider) {
 		hit_record hit_info;
 		if (hittables.hit_with_interval(r, interval_t_to_consider, hit_info)) {
-			return 0.5 * color(hit_info.normal.x() + 1, hit_info.normal.y() + 1, hit_info.normal.z() + 1);
+			return 0.5 * color(hit_info.normal.x() + 1, hit_info.normal.y() + 1, hit_info.normal.z() + 1); 
 		}
-		else  return ray_color(r);
+		return ray_color(r);
+	}
+	\
+	color hits_hittable_list_with_interval_diffuse_surface(hittable_list hittables, const ray& r, interval interval_t_to_consider, int max) {
+		hit_record hit_info;
+    
+		// to avoid overflowing the stack or taking too long in case each new emmitted ray keeps hitting objects 
+		if (max > 0) {
+			if (hittables.hit_with_interval(r, interval_t_to_consider, hit_info))
+			{// instead of taking the color of the normals 
+			   // if there is a hit, we will generate a random emmitted ray
+				   // we will in turn see if that ray hit an object
+				vec3 ray_diffused = random_unit_on_hemisphere(hit_info.normal);// the difused ray on the normal of the surface 
+				// at some point, the generated ray will not hit anything and will return a color, this color will be attenuated by the factor (here 0.8 ) each time it hit an object 
+				return 0.8 * hits_hittable_list_with_interval_diffuse_surface(hittables, ray(hit_info.p, ray_diffused), interval_t_to_consider, max -1);
+			}
+		}
+		// the ray did not hit
+		return ray_color(r); 
+
 	}
 
 	void render(hittable_list objects, interval ray_position_to_consider) {
@@ -110,7 +131,7 @@ public :
 				ray r(camera_center, ray_direction); // ray takes the camera center and the direction of the ray 
 				// the direction of the ray is the vector between the camera center and the pixel we are outputting its color 
 
-				color pixel_color = hits_hittable_list_with_interval(objects, r, ray_position_to_consider);
+				color pixel_color = hits_hittable_list_with_interval(objects, r, ray_position_to_consider );
 				write_color(std::cout, pixel_color);
 			
 
@@ -152,7 +173,7 @@ public :
 						auto random_on_y = viewport_delta_v * (-0.5 + random_double());
 						auto pixel_temp_position = pixel_center + random_on_x + random_on_y;
 						ray ray_temp(camera_center, pixel_temp_position - camera_center);
-						sum_color += hits_hittable_list_with_interval(objects, ray_temp, ray_position_to_consider);
+						sum_color += hits_hittable_list_with_interval_diffuse_surface(objects, ray_temp, ray_position_to_consider, max_depth);
 				}
 				
 
