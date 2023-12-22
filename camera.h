@@ -33,7 +33,7 @@ public :
 	
 
 	int num_sample = 10;
-	int    max_depth = 10;
+	int    max_depth = 50;
 	void initialize() {
 
 		// inintalize image 
@@ -67,19 +67,22 @@ public :
 	void write_color(std::ostream& out, color pixel_color) {
 		// Write the translated [0,255] value of each color component.
 		interval intensity(0.000, 0.999);
-		out << static_cast<int>(255.999 * pixel_color.x()) << ' '
-			<< static_cast<int>(255.999 * pixel_color.y()) << ' '
-			<< static_cast<int>(255.999 *pixel_color.z())<< '\n';
+		out << static_cast<int>(255.999 * linear_to_gamma(pixel_color.x())) << ' '
+			<< static_cast<int>(255.999 * linear_to_gamma(pixel_color.y())) << ' '
+			<< static_cast<int>(255.999 * linear_to_gamma(pixel_color.z()))<< '\n';
 	}
 	
-	
+	double linear_to_gamma(double x) {
+		return sqrt(x);
+	}
+
 	color ray_color(const ray& r) { // shade of blue : depend on the y coord of the ray
 		vec3 unit = unit_vector(r.dir);
 		float y_coord = 0.5 * (unit.y() + 1.0); // with focal legth 1 and in case the ray is not emmitted, and there is not hit, the z will be null 
 		auto initial_color = vec3(1, 1, 1);
 		auto last_color = vec3(0, 0, 1);
 		auto blend = (1 - y_coord) * initial_color + last_color * y_coord;
-		return 0.5* color(unit.x() + 1, unit.y() + 1, unit.z());
+		return  blend;// 0.5 * color(unit.x() + 1, unit.y() + 1, unit.z());
 	}
 
 	color hits_hittable_list_with_interval(hittable_list hittables, const ray& r, interval interval_t_to_consider) {
@@ -99,9 +102,9 @@ public :
 			{// instead of taking the color of the normals 
 			   // if there is a hit, we will generate a random emmitted ray
 				   // we will in turn see if that ray hit an object
-				vec3 ray_diffused = random_unit_on_hemisphere(hit_info.normal);// the difused ray on the normal of the surface 
+				vec3 ray_diffused = random_unit_on_hemisphere_lambertian(hit_info.normal);// the difused ray on the normal of the surface 
 				// at some point, the generated ray will not hit anything and will return a color, this color will be attenuated by the factor (here 0.8 ) each time it hit an object 
-				return 0.8 * hits_hittable_list_with_interval_diffuse_surface(hittables, ray(hit_info.p, ray_diffused), interval_t_to_consider, max -1);
+				return 0.5 * hits_hittable_list_with_interval_diffuse_surface(hittables, ray(hit_info.p, ray_diffused), interval_t_to_consider, max -1);
 			}
 		}
 		// the ray did not hit

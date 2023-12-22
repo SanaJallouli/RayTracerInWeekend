@@ -1,11 +1,11 @@
 #ifndef VEC3_H
 #define VEC3_H
-
+#pragma once
 #include <cmath>
 #include <iostream>
 using std::sqrt; 
 
-
+#include "interval.h"
 class vec3
 {
 public:
@@ -98,5 +98,40 @@ inline vec3 cross(const vec3& u, const vec3& v) {
 inline vec3 unit_vector(vec3 v) {
     return v / v.length();
 }
+
+inline vec3 random() { // random double gives number between [0,1)
+    return vec3(random_double(), random_double(), random_double());
+}
+
+
+inline vec3 random(double min, double max)
+{// random_double(min, max) returns a random real in [min,max).
+    return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+}
+
+inline vec3 random_unit_in_unit_sphere() {
+
+    while (true) {
+        point3 temp(random_double(-1, 1), random_double(-1, 1), random_double(-1, 1));
+
+        if (((temp.x()) * (temp.x()) + (temp.y()) * (temp.y()) + (temp.z()) * (temp.z())) < 1)
+            // the point is inside 
+            return unit_vector(temp);
+    }
+}
+
+inline vec3 random_unit_on_hemisphere(vec3 normal) {
+    auto temp = random_unit_in_unit_sphere();
+    if (dot(temp, normal) > 0) return temp; // the normal to surface and the random ray look in same direction ;
+            return -temp;
+}
+
+inline vec3 random_unit_on_hemisphere_lambertian(vec3 normal) {
+    auto temp = random_unit_in_unit_sphere();
+    if (dot(temp, normal) > 0) return temp+normal; // the normal to surface and the random ray look in same direction ;
+            return -temp+normal;
+}
+
+
 
 #endif
