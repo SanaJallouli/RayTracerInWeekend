@@ -2,8 +2,9 @@
 #include "vec3.h"
 #include "ray.h"
 #include "hittable_list.h"
+#include "material.h"
 using color = vec3;
-
+class hit_record;
 class camera
 {
 public : 
@@ -33,7 +34,7 @@ public :
 	
 
 	int num_sample = 10;
-	int    max_depth = 50;
+	int    max_depth = 200;
 	void initialize() {
 
 		// inintalize image 
@@ -92,7 +93,7 @@ public :
 		}
 		return ray_color(r);
 	}
-	\
+	
 	color hits_hittable_list_with_interval_diffuse_surface(hittable_list hittables, const ray& r, interval interval_t_to_consider, int max) {
 		hit_record hit_info;
     
@@ -112,6 +113,31 @@ public :
 
 	}
 
+
+	color hits_hittable_list_with_materials(hittable_list hittables, const ray& r, interval interval_t_to_consider, int max) {
+		hit_record hit_info;
+
+		// to avoid overflowing the stack or taking too long in case each new emmitted ray keeps hitting objects 
+		if (max > 0) {
+			if (hittables.hit_with_interval(r, interval_t_to_consider, hit_info))
+			{
+				// there were a hit at t along ray r , likely to emmit a ray back 
+				// the material of the hittable object describes how the emmitted ray will be scattered
+				// the material we just hitted is stored in the hit_info
+				
+				// the scatter function describes how the scattered ray will behave , it will need some info like p and normal that are stored in hit_info so pass it to it 
+				ray scattered_ray;
+				color attenuation;
+				hit_info.mat->scatter(r, hit_info, attenuation, scattered_ray);
+				// attenuation is the color of the material, if it is red(1,0,0) so it will make the scattered ray not attenuated at all on the x-axis, and remove from it the green and blue componenets , so it absorbed red and green so that it appears red .
+					return attenuation * hits_hittable_list_with_materials(hittables, scattered_ray, interval_t_to_consider, max-1);
+				
+			}
+		}
+		// the ray did not hit
+		return ray_color(r);
+
+	}
 	void render(hittable_list objects, interval ray_position_to_consider) {
 		initialize();
 
@@ -176,7 +202,7 @@ public :
 						auto random_on_y = viewport_delta_v * (-0.5 + random_double());
 						auto pixel_temp_position = pixel_center + random_on_x + random_on_y;
 						ray ray_temp(camera_center, pixel_temp_position - camera_center);
-						sum_color += hits_hittable_list_with_interval_diffuse_surface(objects, ray_temp, ray_position_to_consider, max_depth);
+						sum_color += hits_hittable_list_with_materials(objects, ray_temp, ray_position_to_consider, max_depth);
 				}
 				
 

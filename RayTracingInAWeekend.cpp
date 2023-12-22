@@ -7,6 +7,9 @@
 #include "hittable_list.h"
 #include "interval.h"
 #include "camera.h"
+#include "material.h"
+#include "metal.h"
+#include "Lambertian.h"
 using color = vec3;
 
 /*
@@ -205,8 +208,24 @@ cam.initialize();
 
 hittable_list myhittables;
 
-myhittables.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
-myhittables.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
+//metal* met = new metal(vec3(1, 0, 0));
+
+Lambertian* lamb = new Lambertian(color(1, 1, 0));
+
+//myhittables.add(make_shared<sphere>(point3(0, 0, -1), 0.5 , met));
+//myhittables.add(make_shared<sphere>(point3(0, -100.5, -1), 100 , lamb));
+
+
+
+auto material_ground = new Lambertian(color(0.8, 0.8, 0.0));
+auto material_center = new Lambertian(color(0.7, 0.3, 0.3));
+auto material_left =  new metal(color(0.8, 0.8, 0.8),0);
+auto material_right = new metal(color(0.8, 0.6, 0.2),0.3);
+
+myhittables.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
+myhittables.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
+myhittables.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+myhittables.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
 
 //auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
 

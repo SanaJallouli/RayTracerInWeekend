@@ -2,18 +2,20 @@
 #include "hittable.h"
 
 #include "interval.h"
+class material;
 
 class sphere : public hittable
 {
 public : 
 	point3 center_sphere; 
 	float radius;
-
+material* mat;
 
 	sphere():radius(0), center_sphere(vec3(0,0,0)) {};
-
-	sphere(point3 center, float radius) : center_sphere(center), radius(radius) {
-	};
+	sphere(point3 _center, double _radius)
+		: center_sphere(_center), radius(_radius){}
+	sphere(point3 _center, double _radius, material* _material)
+		: center_sphere(_center), radius(_radius), mat(_material) {}
 
 	bool hit_with_interval(const ray& r, interval ray_t_interval_to_consider, hit_record& rec) const override {
 
@@ -62,6 +64,7 @@ public :
 				rec.t = t;
 				vec3 outward_normal = unit_vector(center_sphere - p);
 				rec.set_face_normal(r, outward_normal);
+				rec.mat = mat;
 				return true;
 			}
 			else {
@@ -74,6 +77,7 @@ public :
 					rec.t = t;
 					vec3 outward_normal = unit_vector(center_sphere - p);
 					rec.set_face_normal(r, outward_normal);
+					rec.mat = mat;
 					return true;
 				}
 			 return false;
@@ -106,6 +110,7 @@ public :
 		
 		// find the unified normal : the normal is in the direction of the vector (hit)-(center_sphere)
 			rec.p = r.at(rec.t);
+			rec.mat = mat;
 			rec.normal = unit_vector(rec.p - center_sphere);
 
 			return true;
@@ -124,6 +129,7 @@ public :
 			rec.p = r.at(rec.t);
 			vec3 outward = unit_vector(rec.p - center_sphere);
 			rec.set_face_normal(r, outward);
+			rec.mat = mat;
 			if (!rec.front_face) 
 				std::clog << "from inside ";
 
