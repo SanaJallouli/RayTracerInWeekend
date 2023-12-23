@@ -26,6 +26,7 @@ material* mat;
 		auto b = dot((2 * r.dir), (r.orig - center_sphere));
 		auto c = dot((r.orig - center_sphere), (r.orig - center_sphere)) - radius * radius;
 
+
 		// such solution does not exist if delta is negatif
 		auto delta = (b * b - 4 * a * c);
 		// delta < 0 , there is no solution , there is no t along the ray where the ray could have hit the sphere 
@@ -37,7 +38,7 @@ material* mat;
 
 			// the coordinates of the point where the ray hits the sphere is :
 			point3 p = r.at(t); // origin_of_ray+ t*direction_ray 
-
+			rec.p = p;
 			// need to make sure t is in the interval we are considering 
 			if (ray_t_interval_to_consider.contains(t)) {
 				rec.t = t;
@@ -60,9 +61,9 @@ material* mat;
 			{
 				// the coordinates of the point where the ray hits the sphere is :
 				point3 p = r.at(t); // origin_of_ray+ t*direction_ray 
-
+				rec.p = p;
 				rec.t = t;
-				vec3 outward_normal = unit_vector(center_sphere - p);
+				vec3 outward_normal = unit_vector(rec.p-center_sphere);
 				rec.set_face_normal(r, outward_normal);
 				rec.mat = mat;
 				return true;
@@ -73,9 +74,9 @@ material* mat;
 				{
 					// the coordinates of the point where the ray hits the sphere is :
 					point3 p = r.at(t); // origin_of_ray+ t*direction_ray 
-
+					rec.p = p;
 					rec.t = t;
-					vec3 outward_normal = unit_vector(center_sphere - p);
+					vec3 outward_normal = unit_vector(rec.p - center_sphere);
 					rec.set_face_normal(r, outward_normal);
 					rec.mat = mat;
 					return true;
@@ -87,6 +88,7 @@ material* mat;
 		}
 
 	}
+
 
 	bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override
 	{

@@ -3,6 +3,7 @@
 #include "ray.h"
 #include "hittable_list.h"
 #include "material.h"
+#include "interval.h"
 using color = vec3;
 class hit_record;
 class camera
@@ -34,7 +35,7 @@ public :
 	
 
 	int num_sample = 10;
-	int    max_depth = 200;
+	int max_depth = 50;
 	void initialize() {
 
 		// inintalize image 
@@ -67,10 +68,20 @@ public :
 	}
 	void write_color(std::ostream& out, color pixel_color) {
 		// Write the translated [0,255] value of each color component.
-		interval intensity(0.000, 0.999);
-		out << static_cast<int>(255.999 * linear_to_gamma(pixel_color.x())) << ' '
-			<< static_cast<int>(255.999 * linear_to_gamma(pixel_color.y())) << ' '
-			<< static_cast<int>(255.999 * linear_to_gamma(pixel_color.z()))<< '\n';
+		auto r = pixel_color.x();
+		auto g = pixel_color.y();
+		auto b = pixel_color.z();
+
+		// Apply the linear to gamma transform.
+		r = linear_to_gamma(r);
+		g = linear_to_gamma(g);
+		b = linear_to_gamma(b);
+
+		// Write the translated [0,255] value of each color component.
+		interval intensity(0.00, 0.999);
+		out << static_cast<int>(256 * intensity.clamp(r)) << ' '
+			<< static_cast<int>(256 * intensity.clamp(g)) << ' '
+			<< static_cast<int>(256 * intensity.clamp(b)) << '\n';
 	}
 	
 	double linear_to_gamma(double x) {
@@ -119,7 +130,7 @@ public :
 
 		// to avoid overflowing the stack or taking too long in case each new emmitted ray keeps hitting objects 
 		if (max > 0) {
-			if (hittables.hit_with_interval(r, interval_t_to_consider, hit_info))
+			if (hittables.hit(r,interval_t_to_consider.min, interval_t_to_consider.max, hit_info))
 			{
 				// there were a hit at t along ray r , likely to emmit a ray back 
 				// the material of the hittable object describes how the emmitted ray will be scattered
@@ -128,10 +139,10 @@ public :
 				// the scatter function describes how the scattered ray will behave , it will need some info like p and normal that are stored in hit_info so pass it to it 
 				ray scattered_ray;
 				color attenuation;
-				hit_info.mat->scatter(r, hit_info, attenuation, scattered_ray);
+			if(	hit_info.mat->scatter(r, hit_info, attenuation, scattered_ray))
 				// attenuation is the color of the material, if it is red(1,0,0) so it will make the scattered ray not attenuated at all on the x-axis, and remove from it the green and blue componenets , so it absorbed red and green so that it appears red .
 					return attenuation * hits_hittable_list_with_materials(hittables, scattered_ray, interval_t_to_consider, max-1);
-				
+			return color(0, 0, 0);
 			}
 		}
 		// the ray did not hit
@@ -191,7 +202,7 @@ public :
 				ray r(camera_center, ray_direction); // ray takes the camera center and the direction of the ray 
 				// the direction of the ray is the vector between the camera center and the pixel we are outputting its color
 
-				color pixel_color = hits_hittable_list_with_interval(objects, r, ray_position_to_consider);
+				color pixel_color = hits_hittable_list_with_materials(objects, r, ray_position_to_consider, max_depth);
 
 				auto sum_color = pixel_color;
 
