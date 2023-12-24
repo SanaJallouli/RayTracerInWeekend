@@ -10,6 +10,7 @@
 #include "material.h"
 #include "metal.h"
 #include "Lambertian.h"
+#include "dielectric.h"
 using color = vec3;
 
 /*
@@ -210,40 +211,64 @@ hittable_list myhittables;
 
 //metal* met = new metal(vec3(1, 0, 0));
 
-Lambertian* lamb = new Lambertian(color(1, 1, 0));
+//Lambertian* lamb = new Lambertian(color(1, 1, 0));
 
 //myhittables.add(make_shared<sphere>(point3(0, 0, -1), 0.5 , met));
 //myhittables.add(make_shared<sphere>(point3(0, -100.5, -1), 100 , lamb));
 
-
-
+/*
 auto material_ground = new Lambertian(color(0.8, 0.8, 0.0));
-auto material_center = new Lambertian(color(0.7, 0.3, 0.3));
-auto material_left =  new metal(color(0.8, 0.8, 0.8),0);
-auto material_right = new metal(color(0.8, 0.6, 0.2),0.3);
+auto material_center = new Lambertian(color(0.1, 0.2, 0.5));
+auto material_left = new dielectric(color(1.0, 1.0, 1.0),1.5);
+auto material_right = new metal(color(0.8, 0.6, 0.2), 0.0);
 
 myhittables.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
 myhittables.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
 myhittables.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+myhittables.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
 myhittables.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
-
 //auto sphere1 = std::make_shared<sphere>(vec3(0, 0, -1), 0.3);
+*/
 
 // viewport height is initialized in initialize and do not depend on other factors 
 // but this shows that we may need to use some of the properties of the camera and the way it now defined does not really allow for that. since they will only be initialized when we call render 
 // auto sphere2 = std::make_shared<sphere>(vec3(0, -(cam.viewport_height / 2), -1), 0.7); myhittables.add(sphere1);
 // myhittables.add(sphere2);
 
-cam.aspect_ratio = 16.0 / 9.0;
-cam.image_width = 400;
 
+// 7- test the new fov 
+
+
+auto material_ground = new Lambertian(color(0.8, 0.8, 0.0));
+auto material_center = new Lambertian(color(0.1, 0.2, 0.5));
+auto material_left = new dielectric(color(1.0, 1.0, 1.0), 1.5);
+auto material_right = new metal(color(0.8, 0.6, 0.2), 0.0);
+
+myhittables.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
+myhittables.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
+myhittables.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+myhittables.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
+myhittables.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
+
+
+
+cam.aspect_ratio = 16.0 / 9.0;
+
+
+cam.theta_fov = 20;
+cam.defocus_angle = 10.0;
+cam.focus_distance = 3.4;
+
+//cam.look_from = point3(-2, 2, 1);
+//cam.look_at = point3(0, 0, -1);
+//cam.look_up = vec3(0, 1, 0);
 
 // in the context of diffuse light, if the origin of the new created ray is rounded and give a position that is slightly below the surface, the ray wil lhit the surface which is not what we want 
 // so we want to ignore the ray hit if it hit in a position that is tooooo close to the origine b/c it would mean in most cases that it s a ray that was created slightly displaced. 
 // so for a ray to be considered, it should hit at a t that is bigger than a certain tmin , so put this tmin in the interval of accepted t  
 // this corrects the "shadow acne" 
-double min = 0.000001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
-double max = 10; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
+double min = 0.0001; // if the ray hits the hittable at a position in the ray (t) that is smaller than min, do not consider that hit. if you are too close to the center emitting the ray, do not consider the hit, see if there is another hit along a further position in the ray. if such 2nd hit exist, it is likely that we are hitting the object from inside this time. 
+double max = 100000; // if the ray hits the hittable at a position in the ray (t) further than max, do not concider the hit. see if we hit at a position that is closer to center 
 interval ray_position_to_consider(min, max);
 
 cam.render_withAntialiasing(myhittables, ray_position_to_consider);

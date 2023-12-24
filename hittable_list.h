@@ -34,6 +34,7 @@ public:
 		return hitted;
 	}
 
+
 	// we have a ray, and we will see if for that ray, there is one hittable object along its way that is hit. 
 	// loop over all the hittable objects we have registered (in our list) and call their hit method. 
 	// the hit method of an object will rturn true if it was hit by that ray (if there is a t along the ray that solves the equation defining the intersection of ray-object).

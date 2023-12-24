@@ -11,14 +11,26 @@ class camera
 public : 
 	// camera 
 	vec3 camera_center;
-	double focal_legth;
+	double focal_length;
+	double theta_fov; // vertical fov in degrees , to be converted in radian before use 
 
+	// specify additional settings
+	vec3 look_up = vec3(0, 1, 0);
+	point3 look_at= point3(0, 0, -1);
+	point3 look_from = point3(-2, 2, 1); // new center of the camera 
+
+	// defocus blur 
+	double defocus_angle =0;
+	double focus_distance = 10; 
+
+	vec3   defocus_disk_u;  
+	vec3   defocus_disk_v; 
 
 	// viewport 
 	vec3 viewport_center;
 	vec3 viewport_corner;
-	int viewport_width;
-	int viewport_height ;
+	double viewport_width;
+	double viewport_height ;
 	
 	vec3  viewport_delta_u;
 	vec3 viewport_delta_v; 
@@ -26,16 +38,18 @@ public :
 	vec3 viewport_u;
 	vec3 viewport_v;
 
+	vec3 v, u, w;
 
 	// pixels - image
 	int aspect_ratio = 1 ; // this will be modifiable from main
-	int image_width = 100 ;  // modifiable from main 
+	int image_width = 400 ;  // modifiable from main 
 	int image_height;
 	point3 postion_pixel_00;
 	
 
 	int num_sample = 10;
 	int max_depth = 50;
+
 	void initialize() {
 
 		// inintalize image 
@@ -43,27 +57,44 @@ public :
 		image_height = (image_height < 1) ? 1 : image_height;
 
 		// camera 
-		camera_center = vec3(0, 0, 0);
-		focal_legth = 1; 
+		camera_center = point3(0,0,0);
+
+		focal_length = (look_from-look_at).length(); 
 		
 		// viewport 
-		viewport_height = 2; 
-		// aspect ratio may change because imahe_height was less than 1 or because of rounding 
+	    // viewport_height = 2; 
+	    // 2- now viewport height is the vertical fov defined using theta_fov 
+		// we have tan(theta_fov / 2) = h/focal_legth;
+		auto theta_fov_radian = degrees_to_radians(theta_fov);
+		//auto h = tan(theta_fov_radian / 2) * focal_length;
+		auto h = tan(theta_fov_radian / 2) * focus_distance;
+		auto fov = 2 * h;
+		viewport_height = fov;
+
+		auto defocus_radius = tan(degrees_to_radians(defocus_angle / 2)) * focus_distance; 
+		
+		// aspect ratio may change because image_height was less than 1 or because of rounding 
 		// need to use the actual aspect ratio so that viewport and image have the exact same aspect ratio. otherwise it will stretch or squiches the rendered image 
-		auto viewport_width = viewport_height * (static_cast<double>(image_width) / image_height); // heigth * actual aspect ratio 
-		viewport_center = vec3(0, 0, -focal_legth);
+		 viewport_width = viewport_height * (static_cast<double>(image_width) / image_height); // heigth * actual aspect ratio 
+		
+		 w = unit_vector( look_from - look_at );
+		 u = unit_vector(cross(look_up, w));
+		 v = cross(w, u);
+		
 
-		//we add the camera_center in case we set one that is not at origin 
-		viewport_corner =   camera_center+ viewport_center + vec3(-viewport_width / 2,0, 0) + vec3(0, viewport_height / 2, 0);
+		// after adding new coordinate of camera u,v,w 
 
+		viewport_u = viewport_width * u;    // Vector across viewport horizontal edge
+		viewport_v = viewport_height * -v;  // Vector down viewport vertical edge
 
-		viewport_u = vec3(viewport_width, 0, 0); // points to same direction as x 
-		viewport_v = vec3(0, -viewport_height, 0); // points agains y 
+		viewport_corner = look_from - (focus_distance * w) - viewport_u / 2 - viewport_v / 2;
 
-		viewport_delta_u = viewport_u / image_width; // viewport_u is vector from left corner to right corner of viewport, to find the dlta between the pixels , we need to divide viewport_u/ number of pixels on the width which is the width of the image 
+	    viewport_delta_u = viewport_u / image_width; // viewport_u is vector from left corner to right corner of viewport, to find the dlta between the pixels , we need to divide viewport_u/ number of pixels on the width which is the width of the image 
 		viewport_delta_v = viewport_v / image_height;
 
-
+		defocus_disk_u = u * defocus_radius; // radius of the disk around center of camera on u axis 
+		defocus_disk_v = v * defocus_radius; 
+		
 		postion_pixel_00 = viewport_corner + viewport_delta_u/2 + viewport_delta_v/2;
 	}
 	void write_color(std::ostream& out, color pixel_color) {
@@ -149,6 +180,16 @@ public :
 		return ray_color(r);
 
 	}
+
+
+	point3 random_camera_center_in_defocus_disk() {
+		auto random_point_in_unit_disk = random_in_unit_disk(); // point on unit disk 
+
+		return look_from + (random_point_in_unit_disk.x() * defocus_disk_u ) + (random_point_in_unit_disk.y() * defocus_disk_v); // point on the disk around the center of camera, of radius defined by the defocus angle and focus distance 
+		
+	}
+
+	/*
 	void render(hittable_list objects, interval ray_position_to_consider) {
 		initialize();
 
@@ -167,8 +208,9 @@ public :
 			for (int i = 0; i < image_width; ++i) {
 
 				point3 pixel_center = postion_pixel_00 + i * viewport_delta_u + j * viewport_delta_v;//vec3(postion_pixel_00.x() + i, postion_pixel_00.y() - j, - focal_legth);
-				vec3 ray_direction = pixel_center - camera_center;
-				ray r(camera_center, ray_direction); // ray takes the camera center and the direction of the ray 
+			
+				vec3 ray_direction = pixel_center - look_from;
+				ray r(look_from, ray_direction); // ray takes the camera center and the direction of the ray 
 				// the direction of the ray is the vector between the camera center and the pixel we are outputting its color 
 
 				color pixel_color = hits_hittable_list_with_interval(objects, r, ray_position_to_consider );
@@ -179,6 +221,7 @@ public :
 		}
 		std::clog << "\rDone.                 \n";
 	}
+	*/
 
 	void render_withAntialiasing(hittable_list objects, interval ray_position_to_consider) {
 		initialize();
@@ -198,8 +241,13 @@ public :
 			for (int i = 0; i < image_width; ++i) {
 
 				point3 pixel_center = postion_pixel_00 + i * viewport_delta_u + j * viewport_delta_v;//vec3(postion_pixel_00.x() + i, postion_pixel_00.y() - j, - focal_legth);
-				vec3 ray_direction = pixel_center - camera_center;
-				ray r(camera_center, ray_direction); // ray takes the camera center and the direction of the ray 
+			
+				point3 camera_center_random;
+				if (defocus_angle > 0)camera_center_random = random_camera_center_in_defocus_disk();
+				else camera_center_random = look_from;
+			
+				vec3 ray_direction = pixel_center - camera_center_random;
+				ray r(camera_center_random, ray_direction); // ray takes the camera center and the direction of the ray 
 				// the direction of the ray is the vector between the camera center and the pixel we are outputting its color
 
 				color pixel_color = hits_hittable_list_with_materials(objects, r, ray_position_to_consider, max_depth);
@@ -212,7 +260,7 @@ public :
 					auto random_on_x = viewport_delta_u * (-0.5 + (random_double()));// random double gives us [0..1) we want to go from [-0.5 ..0.5)
 						auto random_on_y = viewport_delta_v * (-0.5 + random_double());
 						auto pixel_temp_position = pixel_center + random_on_x + random_on_y;
-						ray ray_temp(camera_center, pixel_temp_position - camera_center);
+						ray ray_temp(camera_center_random, pixel_temp_position - camera_center_random);
 						sum_color += hits_hittable_list_with_materials(objects, ray_temp, ray_position_to_consider, max_depth);
 				}
 				

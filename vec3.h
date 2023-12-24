@@ -168,4 +168,12 @@ static double reflectance(double cosine, double ref_idx) {
     return r0 + (1 - r0) * pow((1 - cosine), 5);
 }
 
+inline vec3 random_in_unit_disk() {
+    while (true) {
+        auto temp = vec3(random_double(-1, 1), random_double(-1, 1), 0);
+        if (temp.length_squared() < 1)
+            return temp;
+    }
+}
+
 #endif
