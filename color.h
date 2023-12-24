@@ -8,5 +8,4 @@
 using color = vec3;
 
 
-
 #endif
