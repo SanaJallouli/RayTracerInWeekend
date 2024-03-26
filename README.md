@@ -1,1 +1,2 @@
-![image Large](https://github.com/SanaJallouli/RayTracerInWeekend/assets/59178137/e1f53ad6-2960-49a5-9d0b-6e4e8dfff01a)
+
+![image Medium](https://github.com/SanaJallouli/RayTracerInWeekend/assets/59178137/be30a937-bf5b-4af4-a1d7-eb06dc8f9e50)
